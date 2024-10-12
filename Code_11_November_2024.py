@@ -624,8 +624,8 @@ class DriveBase(object):
                 self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
 
                 # ---> Multiplying the speeds with the constants <---
-                self.leftSpeed = int(self.speed * self.kLeft)
-                self.rightSpeed = int(self.speed * self.kRight)
+                self.leftSpeed = int(self.speed * self.kLeft // 1000)
+                self.rightSpeed = int(self.speed * self.kRight // 1000)
 
                 # ---> Object Stall Detection <---
                 self.position = (abs(motor.relative_position(self.leftMotorDB)) + abs(motor.relative_position(self.rightMotorDB)))
@@ -712,8 +712,8 @@ class DriveBase(object):
                 self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
 
                 # ---> Multiplying the speeds with the constants <---
-                self.leftSpeed = int(self.speed * self.kLeft)
-                self.rightSpeed = int(self.speed * self.kRight)
+                self.leftSpeed = int(self.speed * self.kLeft // 1000)
+                self.rightSpeed = int(self.speed * self.kRight // 1000)
 
                 # ---> Object Stall Detection <---
                 self.position = (abs(motor.relative_position(self.leftMotorDB)) + abs(motor.relative_position(self.rightMotorDB)))
