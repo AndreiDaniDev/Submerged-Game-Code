@@ -1,24 +1,36 @@
 import runloop, hub, motor, motor_pair, color, math, time
 from hub import motion_sensor as gs
 
-
 # ---> The class that has all acceleration methods (can be modified) <---
 class SpeedMethods(object):
     @staticmethod
-    def liniar(x: float) -> float:
-        return x
+    def linear(x: float): return x
+
     @staticmethod
-    def easeOutInQuad(x: float) -> float:
-        return 1 - math.pow(abs(2 * x - 1), 2)
+    def easeOutInLinear(x: float): return 1 - abs(1 - 2 * x)
+
     @staticmethod
-    def easeOutInCubic(x: float) -> float:
-        return 1 - math.pow(abs(2 * x - 1), 3)
+    def easeOutInQuad(x: float): return 1 - math.pow(abs(1 - 2 * x), 2)
+
     @staticmethod
-    def easeInQuad(x: float) -> float:
-        return math.pow(x, 2)
+    def easeInQuad(x: float): return math.pow(x, 2)
+
     @staticmethod
-    def easeOutQuad(x: float) -> float:
-        return 1 - math.pow((1 - x), 2)
+    def easeOutQuad(x: float): return 1 - math.pow(1 - x, 2) # 1 - SpeedMethods.easeInQuad(1 - x)
+
+    @staticmethod
+    def easeInOutQuad(x: float): return SpeedMethods.easeInQuad(2 * x) / 2 if x <= 0.5 else (1 + SpeedMethods.easeOutInQuad(2 * x - 1)) / 2
+
+    # Constant1 = x, Constant2 = (x + 1)
+    @staticmethod
+    def easeInBack(x: float): return (1) * math.pow(x, 3) - (2) * math.pow(x, 2)
+
+    @staticmethod
+    def easeOutBack(x: float): return 1 - SpeedMethods.easeInBack(1 - x)
+
+    @staticmethod
+    def easeInOutBack(x: float): return SpeedMethods.easeInBack(2 * x) / 2 if x <= 0.5 else (1 + SpeedMethods.easeOutBack(2 * x - 1)) / 2
+
 
 # ---> The class for the lower part of the robot that is responsible for moving <---
 class DriveBase(object):
@@ -764,7 +776,7 @@ class DriveBase(object):
 
         return None
 
-driveBase = DriveBase(hub.port.A, hub.port.C, hub.port.B, hub.port.D, 2045, 1000, motor.SMART_BRAKE)
+driveBase = DriveBase(hub.port.A, hub.port.C, hub.port.D, hub.port.B, 2045, 1000, motor.SMART_BRAKE)
 
 # ---> Approach 1 to implementing runs (Optimal) <---
 class Programs(object):
@@ -875,17 +887,45 @@ class Programs(object):
         await motor.run_for_degrees(driveBase.leftMotorSYS, -5700, 10000)
         await runloop.sleep_ms(500)
         await driveBase.gyroForwards(500, 700, 900, kp = 150, ki = 1, kd = 0, constantsScale = 1000)
-        
         return None
 
 
     async def Run7(self) -> None:
         driveBase.initRun()
-        await driveBase.gyroBackwards(80, 250, 250, kp = 150, ki = 2, kd = 0, constantsScale = 1000)
+        
+        # Get Octoput & Crab (Inverse Direction - Start with back)
+        await motor.run_for_degrees(driveBase.rightMotorSYS, 100, 250)
+        await driveBase.gyroBackwards(77, 200, 400, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.turnLeft(360, 150, 200, kLeft = -1, kRight = 1)
+        await driveBase.turnLeft(352, 200, 400, kLeft = -1, kRight = 1, error = 100)
         await runloop.sleep_ms(500)
-        await driveBase.gyroBackwards(850, 600, 700, kp = 150, ki = 5, kd = 0, constantsScale = 1000)
+        await driveBase.gyroBackwards(850, 400, 800, kp = 175, ki = 3, kd = 20, constantsScale = 1000)
+        await runloop.sleep_ms(500)
+
+        await driveBase.gyroForwards(250, 200, 400, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
+        await runloop.sleep_ms(500)
+        await driveBase.turnLeft(1020, 200, 300, kLeft = -1, kRight = 1, error = 75) #
+        await runloop.sleep_ms(500)
+        await driveBase.gyroForwards(400, 250, 500, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
+        await runloop.sleep_ms(250)
+
+        await motor.run_for_degrees(driveBase.rightMotorSYS, -600, 1000)
+        await runloop.sleep_ms(500)
+        
+        # motor.run_for_degrees(driveBase.rightMotorSYS, -200, 250)
+        await driveBase.gyroForwards(45, 250, 500, kp = 160, ki = 3, kd = 0, constantsScale = 1000)
+        await runloop.sleep_ms(500)
+        await driveBase.turnRight(200, 250, 250, kLeft = 1, kRight = -1, error = 75) #
+        await runloop.sleep_ms(500)
+
+        # Hope
+        await driveBase.gyroBackwards(125, 200, 300, kp = 160, ki = 3, kd = 0, constantsScale = 1000)
+        await runloop.sleep_ms(500)
+        await driveBase.turnLeft(575, 200, 200, kLeft = -1, kRight = 1)
+        await runloop.sleep_ms(500)
+        await driveBase.gyroForwards(250, 200, 400, kp = 160, ki = 3, kd = 0, constantsScale = 1000)
+        await runloop.sleep_ms(500)
+        
         return None
 
 # ---> The main program <---
