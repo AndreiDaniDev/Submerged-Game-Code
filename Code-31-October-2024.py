@@ -61,7 +61,7 @@ class DriveBase(object):
         self.maxAngle = 3350; self.maxOneTurnAngle = 1650
 
         # ---> Defining the (global) values that will be used in the functions <---
-        self.speed: int = 0; self.startSpeed: int = 0; self.endSpeed: int = 0
+        self.speed: int = 0; self.lowestSpeed: int = 0; self.highestSpeed: int = 0
         self.diffSpeed: int = 0; self.leftSpeed: int = 0; self.rightSpeed: int = 0
 
         self.approximationScale: int = 0; self.currentApproximationValue: float = 0
@@ -91,7 +91,7 @@ class DriveBase(object):
         # ---> This needs to be called at the start of every program / run <---
         # ---> In order for all variables to be reset <---
 
-        self.speed = 0; self.startSpeed = 0; self.endSpeed = 0
+        self.speed = 0; self.lowestSpeed = 0; self.highestSpeed = 0
         self.diffSpeed = 0; self.leftSpeed = 0; self.rightSpeed = 0
 
         self.approximationScale = 0; self.currentApproximationValue = 0
@@ -171,13 +171,13 @@ class DriveBase(object):
 
         return None
 
-    async def gyroForwards(self, distance: int, startSpeed: int, endSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, accelerationMethod = SpeedMethods.easeOutInQuad, stop: bool = True) -> None:
+    async def gyroForwards(self, distance: int, lowestSpeed: int, highestSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, stop: bool = True) -> None:
 
         '''
         ---> Parameters Gyro Forwards / Backwards <---
         distance: How much we want the robot to travel (in milimeters)
-        startSpeed: The speed that the robot will start
-        endSpeed: The speed that the robot will reach
+        lowestSpeed: The lowest speed that the robot will reach (accelerating function - f(0))
+        highestSpeed: The highest speed that the robot will reach
 
         kp, ki, kd: Positive coefficients that will be used in the Proportional - Integral - Derivative Controller (to calculate the correction that will be applied)
         dt: The time between the readings of two consecutive errors (acts like a delay -> slower response time, but sometimes this can help)
@@ -186,7 +186,7 @@ class DriveBase(object):
         stallDetectionIterator: This represents how frequently the controller checks if the robot is stuck or not (be aware that it's affected by dt)
         stallDetectionThreshold: If the difference between the current position and the last position is smaller that this value it means that the robot is stuck
         accelerationScale: It reprezents how many speed changes we want to have while travelling the given distance
-        accelerationMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
+        easingMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
         stop: If we want to stop the robot after the funcion this will be true, otherwise false
         '''
 
@@ -196,20 +196,20 @@ class DriveBase(object):
         self.kp = abs(kp); self.ki = abs(ki); self.kd = abs(kd); self.dt = abs(dt)
 
         gs.reset_yaw(gs.tilt_angles()[0] - self.reachAngle); self.reachAngle = 0
-        self.startSpeed = abs(startSpeed); self.endSpeed = abs(endSpeed)
+        self.lowestSpeed = abs(lowestSpeed); self.highestSpeed = abs(highestSpeed)
         self.currentReachDistance = self.transformDistanceMM(distance)
         self.approximationScale = abs(accelerationScale)
-        self.diffSpeed = self.endSpeed - self.startSpeed
+        self.diffSpeed = self.highestSpeed - self.lowestSpeed
         self.outputValue = 0; self.iterator = 1
         self.previousApproximationValue = 0
         self.previousReachDistance = 0
         self.wasStuck = False
 
-        # Make startSpeed & endSpeed be in the range of [self.pairMinSpeed, self.pairMaxSpeed]
-        if(self.startSpeed > self.pairMaxSpeed): self.startSpeed = self.usualMaxSpeed
-        if(self.startSpeed < self.pairMinSpeed): self.startSpeed = self.usualMinSpeed
-        if(self.endSpeed > self.pairMaxSpeed): self.endSpeed = self.usualMaxSpeed
-        if(self.endSpeed < self.pairMinSpeed): self.endSpeed = self.usualMinSpeed
+        # Make lowestSpeed & highestSpeed be in the range of [self.pairMinSpeed, self.pairMaxSpeed]
+        if(self.lowestSpeed > self.pairMaxSpeed): self.lowestSpeed = self.usualMaxSpeed
+        if(self.lowestSpeed < self.pairMinSpeed): self.lowestSpeed = self.usualMinSpeed
+        if(self.highestSpeed > self.pairMaxSpeed): self.highestSpeed = self.usualMaxSpeed
+        if(self.highestSpeed < self.pairMinSpeed): self.highestSpeed = self.usualMinSpeed
 
         # Precalculating the necessary values
         if(self.previousFunction == 1):
@@ -234,7 +234,7 @@ class DriveBase(object):
 
             # ---> Calculating the necessary speeds to fix the error and to accelerate <---
             self.currentApproximationValue = self.getApproximation(self.getTimeDistance(), self.approximationScale)
-            self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, 0, 1))
+            self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, 0, 1))
             self.leftSpeed = int(self.limit(int(self.speed - self.controllerOutput), self.pairMaxSpeed, self.pairMinSpeed))
             self.rightSpeed = int(self.limit(int(self.speed + self.controllerOutput), self.pairMaxSpeed, self.pairMinSpeed))
 
@@ -254,13 +254,13 @@ class DriveBase(object):
 
         return None
 
-    async def gyroBackwards(self, distance: int, startSpeed: int, endSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, accelerationMethod = SpeedMethods.easeOutInQuad, stop: bool = True) -> None:
+    async def gyroBackwards(self, distance: int, lowestSpeed: int, highestSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, stop: bool = True) -> None:
 
         '''
         ---> Parameters Gyro Forwards & Backwards <---
         distance: How much we want the robot to travel (in milimeters)
-        startSpeed: The speed that the robot will start
-        endSpeed: The speed that the robot will reach
+        lowestSpeed: The lowest speed that the robot will reach (accelerating function - f(0))
+        highestSpeed: The highest speed that the robot will reach
 
         kp, ki, kd: Positive coefficients that will be used in the Proportional - Integral - Derivative Controller (to calculate the correction that will be applied)
         dt: The time between the readings of two consecutive errors (acts like a delay -> slower response time, but sometimes this can help)
@@ -269,7 +269,7 @@ class DriveBase(object):
         stallDetectionIterator: This represents how frequently the controller checks if the robot is stuck or not (be aware that it's affected by dt)
         stallDetectionThreshold: If the difference between the current position and the last position is smaller that this value it means that the robot is stuck
         accelerationScale: It reprezents how many speed changes we want to have while travelling the given distance
-        accelerationMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
+        easingMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
         stop: If we want to stop the robot after the funcion this will be true, otherwise false
         '''
 
@@ -279,20 +279,20 @@ class DriveBase(object):
         self.kp = abs(kp); self.ki = abs(ki); self.kd = abs(kd); self.dt = abs(dt)
 
         gs.reset_yaw(gs.tilt_angles()[0] - self.reachAngle); self.reachAngle = 0
-        self.startSpeed = abs(startSpeed); self.endSpeed = abs(endSpeed)
+        self.lowestSpeed = abs(lowestSpeed); self.highestSpeed = abs(highestSpeed)
         self.currentReachDistance = self.transformDistanceMM(distance)
         self.approximationScale = abs(accelerationScale)
-        self.diffSpeed = self.endSpeed - self.startSpeed
+        self.diffSpeed = self.highestSpeed - self.lowestSpeed
         self.outputValue = 0; self.iterator = 1
         self.previousApproximationValue = 0
         self.previousReachDistance = 0
         self.wasStuck = False
 
-        # Make startSpeed & endSpeed be in the range of [self.pairMinSpeed, self.pairMaxSpeed]
-        if(self.startSpeed > self.pairMaxSpeed): self.startSpeed = self.usualMaxSpeed
-        if(self.startSpeed < self.pairMinSpeed): self.startSpeed = self.usualMinSpeed
-        if(self.endSpeed > self.pairMaxSpeed): self.endSpeed = self.usualMaxSpeed
-        if(self.endSpeed < self.pairMinSpeed): self.endSpeed = self.usualMinSpeed
+        # Make lowestSpeed & highestSpeed be in the range of [self.pairMinSpeed, self.pairMaxSpeed]
+        if(self.lowestSpeed > self.pairMaxSpeed): self.lowestSpeed = self.usualMaxSpeed
+        if(self.lowestSpeed < self.pairMinSpeed): self.lowestSpeed = self.usualMinSpeed
+        if(self.highestSpeed > self.pairMaxSpeed): self.highestSpeed = self.usualMaxSpeed
+        if(self.highestSpeed < self.pairMinSpeed): self.highestSpeed = self.usualMinSpeed
 
         # Precalculating the necessary values
         if(self.previousFunction == 2):
@@ -315,7 +315,7 @@ class DriveBase(object):
 
             # ---> Calculating the necessary speeds to fix the error and to accelerate <---
             self.currentApproximationValue = self.getApproximation(self.getTimeDistance(), self.approximationScale)
-            self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, 0, 1))
+            self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, 0, 1))
             self.leftSpeed = -int(self.limit(int(self.speed - self.controllerOutput), self.pairMaxSpeed, self.pairMinSpeed))
             self.rightSpeed = -int(self.limit(int(self.speed + self.controllerOutput), self.pairMaxSpeed, self.pairMinSpeed))
 
@@ -335,13 +335,13 @@ class DriveBase(object):
 
         return None
 
-    async def turnLeft(self, angle: int, startSpeed: int, endSpeed: int, *, kLeft: int = -1, kRight: int = 1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, accelerationMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True):
+    async def turnLeft(self, angle: int, lowestSpeed: int, highestSpeed: int, *, kLeft: int = -1, kRight: int = 1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True):
 
         '''
         ---> Parameters Turn Left & Right <---
         angle: how much we want the robot to turn (in decidegrees)
-        startSpeed: The speed that the robot will start
-        endSpeed: The speed that the robot will reach
+        lowestSpeed: The lowest speed that the robot will reach (accelerating function - f(0))
+        highestSpeed: The highest speed that the robot will reach
 
         kLeft, kRight: multiplyers for the applied speeds (if 1 the wheel will move forwards, if -1 backwards and if 0 it won't move)
         possible pairs for [kLeft, kRight]:
@@ -353,7 +353,7 @@ class DriveBase(object):
         stallDetectionIterator: This represents how frequently the controller checks if the robot is stuck or not (be aware that it's affected by dt)
         stallDetectionThreshold: If the difference between the current position and the last position is smaller that this value it means that the robot is stuck
         accelerationScale: It reprezents how many speed changes we want to have while travelling the given distance
-        accelerationMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
+        easingMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
         stop: If we want to stop the robot after the funcion this will be true, otherwise false
 
         addition, divizor: these values are used for breaking down this function into three seperate functions
@@ -371,9 +371,9 @@ class DriveBase(object):
             return None; # This option was removed, but we added the option to have larger turns
 
         if(angle > self.maxOneTurnAngle):
-            await self.turnLeft(angle // 3, startSpeed, endSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 0, divizor = 3, stop = False)
-            await self.turnLeft(angle // 3, startSpeed, endSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 1, divizor = 3, stop = False)
-            await self.turnLeft(angle // 3, startSpeed, endSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 2, divizor = 3, stop = stop)
+            await self.turnLeft(angle // 3, lowestSpeed, highestSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 0, divizor = 3, stop = False)
+            await self.turnLeft(angle // 3, lowestSpeed, highestSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 1, divizor = 3, stop = False)
+            await self.turnLeft(angle // 3, lowestSpeed, highestSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 2, divizor = 3, stop = stop)
             return None
 
         # ---> Set the current angle to the last error from the previous function <---
@@ -382,9 +382,9 @@ class DriveBase(object):
 
         # ---> Precalculating some values and resetting the position <---
         self.kLeft = kLeft; self.kRight = kRight
-        self.startSpeed = abs(startSpeed)
-        self.endSpeed = abs(endSpeed)
-        self.diffSpeed = self.endSpeed - self.startSpeed
+        self.lowestSpeed = abs(lowestSpeed)
+        self.highestSpeed = abs(highestSpeed)
+        self.diffSpeed = self.highestSpeed - self.lowestSpeed
 
         self.approximationScale = accelerationScale
         self.currentApproximationValue = 0
@@ -413,7 +413,7 @@ class DriveBase(object):
 
             # ---> Speed Calculations <---
             self.currentApproximationValue = self.getApproximation(self.getTimeAngle(), self.approximationScale)
-            self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
+            self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, addition, divizor))
 
             # ---> Multiplying the speeds with the constants <---
             self.leftSpeed = int(self.speed * self.kLeft)
@@ -435,13 +435,13 @@ class DriveBase(object):
 
         return None
 
-    async def turnRight(self, angle: int, startSpeed: int, endSpeed: int, *, kLeft: int = 1, kRight: int = -1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, accelerationMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True):
+    async def turnRight(self, angle: int, lowestSpeed: int, highestSpeed: int, *, kLeft: int = 1, kRight: int = -1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True):
 
         '''
         ---> Parameters Turn Left & Right <---
         angle: how much we want the robot to turn (in decidegrees)
-        startSpeed: The speed that the robot will start
-        endSpeed: The speed that the robot will reach
+        lowestSpeed: The lowest speed that the robot will reach (accelerating function - f(0))
+        highestSpeed: The highest speed that the robot will reach
 
         kLeft, kRight: multiplyers for the applied speeds (if 1 the wheel will move forwards, if -1 backwards and if 0 it won't move)
         possible pairs for [kLeft, kRight]:
@@ -453,7 +453,7 @@ class DriveBase(object):
         stallDetectionIterator: This represents how frequently the controller checks if the robot is stuck or not (be aware that it's affected by dt)
         stallDetectionThreshold: If the difference between the current position and the last position is smaller that this value it means that the robot is stuck
         accelerationScale: It reprezents how many speed changes we want to have while travelling the given distance
-        accelerationMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
+        easingMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
         stop: If we want to stop the robot after the funcion this will be true, otherwise false
 
         addition, divizor: these values are used for breaking down this function into three seperate functions
@@ -471,9 +471,9 @@ class DriveBase(object):
             return None; # This option was removed, but we added the option to have larger turns
 
         if(angle > self.maxOneTurnAngle):
-            await self.turnRight(angle // 3, startSpeed, endSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 0, divizor = 3, stop = False)
-            await self.turnRight(angle // 3, startSpeed, endSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 1, divizor = 3, stop = False)
-            await self.turnRight(angle // 3, startSpeed, endSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 2, divizor = 3, stop = stop)
+            await self.turnRight(angle // 3, lowestSpeed, highestSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 0, divizor = 3, stop = False)
+            await self.turnRight(angle // 3, lowestSpeed, highestSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 1, divizor = 3, stop = False)
+            await self.turnRight(angle // 3, lowestSpeed, highestSpeed, kLeft = kLeft, kRight = kRight, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 2, divizor = 3, stop = stop)
             return None
 
         # ---> Set the current angle to the last error from the previous function <---
@@ -482,9 +482,9 @@ class DriveBase(object):
 
         # ---> Precalculating some values and resetting the position <---
         self.kLeft = kLeft; self.kRight = kRight
-        self.startSpeed = abs(startSpeed)
-        self.endSpeed = abs(endSpeed)
-        self.diffSpeed = self.endSpeed - self.startSpeed
+        self.lowestSpeed = abs(lowestSpeed)
+        self.highestSpeed = abs(highestSpeed)
+        self.diffSpeed = self.highestSpeed - self.lowestSpeed
 
         self.approximationScale = accelerationScale
         self.currentApproximationValue = 0
@@ -513,7 +513,7 @@ class DriveBase(object):
 
             # ---> Speed Calculations <---
             self.currentApproximationValue = self.getApproximation(self.getTimeAngle(), self.approximationScale)
-            self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
+            self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, addition, divizor))
 
             # ---> Multiplying the speeds with the constants <---
             self.leftSpeed = int(self.speed * self.kLeft)
@@ -535,20 +535,20 @@ class DriveBase(object):
 
         return None
 
-    async def arcTurnForwards(self, radius: int, outerWheel: int, angle: int, startSpeed: int, endSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5,accelerationScale: int = 100,accelerationMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True) -> None:
+    async def arcTurnForwards(self, radius: int, outerWheel: int, angle: int, lowestSpeed: int, highestSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5,accelerationScale: int = 100,easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True) -> None:
 
         '''
         ---> Parameters for Arc Turn Forwards / Backwards <---
         radius: the distance between the center of the circle that the robot will follow and the robot itself (in milimiters)
         outerWheel: the port of the motor that will be on the outside (it will have greater speed)
         angle: how much we want the robot to turn (in decidegrees)
-        startSpeed: The speed that the robot will start
-        endSpeed: The speed that the robot will reach
+        lowestSpeed: The lowest speed that the robot will reach (accelerating function - f(0))
+        highestSpeed: The highest speed that the robot will reach
 
         stallDetectionIterator: This represents how frequently the controller checks if the robot is stuck or not (be aware that it's affected by dt)
         stallDetectionThreshold: If the difference between the current position and the last position is smaller that this value it means that the robot is stuck
         accelerationScale: It reprezents how many speed changes we want to have while travelling the given distance
-        accelerationMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
+        easingMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
         stop: If we want to stop the robot after the funcion this will be true, otherwise false
 
         addition, divizor: these values are used for breaking down this function into three seperate functions
@@ -560,14 +560,14 @@ class DriveBase(object):
         angle = min(abs(angle), self.maxAngle)
 
         if(angle > self.maxOneTurnAngle): # ---> Divide the ArcTurn in three ArcTurns <---
-            await self.arcTurnForwards(radius, outerWheel, angle // 3, startSpeed, endSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 0, divizor = 3, stop = False)
-            await self.arcTurnForwards(radius, outerWheel, angle // 3, startSpeed, endSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 1, divizor = 3, stop = False)
-            await self.arcTurnForwards(radius, outerWheel, angle // 3, startSpeed, endSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 2, divizor = 3, stop = stop)
+            await self.arcTurnForwards(radius, outerWheel, angle // 3, lowestSpeed, highestSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 0, divizor = 3, stop = False)
+            await self.arcTurnForwards(radius, outerWheel, angle // 3, lowestSpeed, highestSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 1, divizor = 3, stop = False)
+            await self.arcTurnForwards(radius, outerWheel, angle // 3, lowestSpeed, highestSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 2, divizor = 3, stop = stop)
             return None
 
         # ---> Precalculating some values and resetting the position <---
-        self.startSpeed = abs(startSpeed); self.endSpeed = abs(endSpeed)
-        self.diffSpeed = self.endSpeed - self.startSpeed
+        self.lowestSpeed = abs(lowestSpeed); self.highestSpeed = abs(highestSpeed)
+        self.diffSpeed = self.highestSpeed - self.lowestSpeed
 
         self.approximationScale = accelerationScale
         self.currentApproximationValue = 0
@@ -585,7 +585,7 @@ class DriveBase(object):
         if(outerWheel == self.leftMotorDB): # ---> self.turnLeft() <---
             # Calculate wheel to wheel ratio based on some formulas (https://www.desmos.com/calculator/xomkwmen35)
             # await driveBase.turnLeft(900, 200, 200, kLeft = 0, kRight = 1) # OuterWheel Left, Forwards
-            self.kLeft = 1000; self.kRight = (1000 * (radius + 40) // (radius - 40))
+            self.kLeft = 1000; self.kRight = (1000 * (radius - 80) // radius)
             self.reachAngle = angle; self.targetedAngle = (angle - error)
 
             await runloop.sleep_ms(25)
@@ -599,7 +599,7 @@ class DriveBase(object):
 
                 # ---> Speed Calculations <---
                 self.currentApproximationValue = self.getApproximation(self.getTimeAngle(), self.approximationScale)
-                self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
+                self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, addition, divizor))
 
                 # ---> Multiplying the speeds with the constants <---
                 self.leftSpeed = int(self.speed * self.kLeft // 1000)
@@ -618,7 +618,7 @@ class DriveBase(object):
         elif(outerWheel == self.rightMotorDB): # ---> self.turnLeft() <---
             # Calculate wheel to wheel ratio based on some formulas (https://www.desmos.com/calculator/xomkwmen35)
             # await driveBase.turnRight(900, 200, 200, kLeft = 1, kRight = 0) # OuterWheel Right, Forwards
-            self.kLeft = (1000 * (radius + 40) // (radius - 40)); self.kRight = 1000
+            self.kLeft = (1000 * (radius - 80) // radius); self.kRight = 1000
             self.reachAngle = -(angle); self.targetedAngle = -(angle - error)
 
             await runloop.sleep_ms(25)
@@ -632,7 +632,7 @@ class DriveBase(object):
 
                 # ---> Speed Calculations <---
                 self.currentApproximationValue = self.getApproximation(self.getTimeAngle(), self.approximationScale)
-                self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
+                self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, addition, divizor))
 
                 # ---> Multiplying the speeds with the constants <---
                 self.leftSpeed = int(self.speed * self.kLeft // 1000)
@@ -654,20 +654,20 @@ class DriveBase(object):
 
         return None
 
-    async def arcTurnBackwards(self, radius: int, outerWheel: int, angle: int, startSpeed: int, endSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, accelerationMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True) -> None:
+    async def arcTurnBackwards(self, radius: int, outerWheel: int, angle: int, lowestSpeed: int, highestSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True) -> None:
 
         '''
         ---> Parameters for Arc Turn Forwards / Backwards <---
         radius: the distance between the center of the circle that the robot will follow and the robot itself (in milimiters)
         outerWheel: the port of the motor that will be on the outside (it will have greater speed)
         angle: how much we want the robot to turn (in decidegrees)
-        startSpeed: The speed that the robot will start
-        endSpeed: The speed that the robot will reach
+        lowestSpeed: The lowest speed that the robot will reach (accelerating function - f(0))
+        highestSpeed: The highest speed that the robot will reach
 
         stallDetectionIterator: This represents how frequently the controller checks if the robot is stuck or not (be aware that it's affected by dt)
         stallDetectionThreshold: If the difference between the current position and the last position is smaller that this value it means that the robot is stuck
         accelerationScale: It reprezents how many speed changes we want to have while travelling the given distance
-        accelerationMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
+        easingMethod: The graph (function) that will influence what the speed is based on the travelled distance until that moment
         stop: If we want to stop the robot after the funcion this will be true, otherwise false
 
         addition, divizor: these values are used for breaking down this function into three seperate functions
@@ -679,14 +679,14 @@ class DriveBase(object):
         angle = min(abs(angle), self.maxAngle)
 
         if(angle > self.maxOneTurnAngle): # ---> Divide the ArcTurn in three ArcTurns <---
-            await self.arcTurnBackwards(radius, outerWheel, angle // 3, startSpeed, endSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 0, divizor = 3, stop = False)
-            await self.arcTurnBackwards(radius, outerWheel, angle // 3, startSpeed, endSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 1, divizor = 3, stop = False)
-            await self.arcTurnBackwards(radius, outerWheel, angle // 3, startSpeed, endSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, accelerationMethod = accelerationMethod, addition = 2, divizor = 3, stop = stop)
+            await self.arcTurnBackwards(radius, outerWheel, angle // 3, lowestSpeed, highestSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 0, divizor = 3, stop = False)
+            await self.arcTurnBackwards(radius, outerWheel, angle // 3, lowestSpeed, highestSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 1, divizor = 3, stop = False)
+            await self.arcTurnBackwards(radius, outerWheel, angle // 3, lowestSpeed, highestSpeed, error = error, stallDetectionIterator = stallDetectionIterator, stallDetectionThreshold = stallDetectionThreshold, accelerationScale = accelerationScale // 3, easingMethod = easingMethod, addition = 2, divizor = 3, stop = stop)
             return None
 
         # ---> Precalculating some values and resetting the position <---
-        self.startSpeed = abs(startSpeed); self.endSpeed = abs(endSpeed)
-        self.diffSpeed = self.endSpeed - self.startSpeed
+        self.lowestSpeed = abs(lowestSpeed); self.highestSpeed = abs(highestSpeed)
+        self.diffSpeed = self.highestSpeed - self.lowestSpeed
 
         self.approximationScale = accelerationScale
         self.currentApproximationValue = 0
@@ -705,7 +705,7 @@ class DriveBase(object):
         if(outerWheel == self.leftMotorDB): # ---> self.turnRight() <---
             # Calculate wheel to wheel ratio based on some formulas (https://www.desmos.com/calculator/etn4nkl1fz)
             # await driveBase.turnRight(900, 200, 200, kLeft = 0, kRight = -1) # OuterWheel Left, Backwards
-            self.kLeft = -1000; self.kRight = -(1000 * (radius + 40) // (radius - 40))
+            self.kLeft = -1000; self.kRight = -(1000 * (radius - 80) // radius)
 
             self.reachAngle = -(angle); self.targetedAngle = -(angle - error)
 
@@ -720,7 +720,7 @@ class DriveBase(object):
 
                 # ---> Speed Calculations <---
                 self.currentApproximationValue = self.getApproximation(self.getTimeAngle(), self.approximationScale)
-                self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
+                self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, addition, divizor))
 
                 # ---> Multiplying the speeds with the constants <---
                 self.leftSpeed = int(self.speed * self.kLeft // 1000)
@@ -739,7 +739,7 @@ class DriveBase(object):
         elif(outerWheel == self.rightMotorDB): # ---> self.turnLeft() <---
             # Calculate wheel to wheel ratio based on some formulas (https://www.desmos.com/calculator/etn4nkl1fz)
             # await driveBase.turnLeft(900, 200, 200, kLeft = -1, kRight = 0) # OuterWheel Right, Backwards
-            self.kLeft = -(1000 * (radius + 40) // (radius - 40)); self.kRight = -1000
+            self.kLeft = -(1000 * (radius - 80) // radius); self.kRight = -1000
 
             self.reachAngle = angle; self.targetedAngle = (angle - error)
 
@@ -754,7 +754,7 @@ class DriveBase(object):
 
                 # ---> Speed Calculations <---
                 self.currentApproximationValue = self.getApproximation(self.getTimeAngle(), self.approximationScale)
-                self.speed = int(self.startSpeed + self.getSpeed(accelerationMethod, addition, divizor))
+                self.speed = int(self.lowestSpeed + self.getSpeed(easingMethod, addition, divizor))
 
                 # ---> Multiplying the speeds with the constants <---
                 self.leftSpeed = int(self.speed * self.kLeft // 1000)
@@ -817,7 +817,7 @@ class Programs(object):
         await driveBase.gyroForwards(330, 300, 600, kp = 175, ki = 2, kd = 0, constantsScale = 100)
         await motor.run_for_degrees(driveBase.rightMotorSYS, 240, 250)
         motor.run_for_degrees(driveBase.rightMotorSYS, 160, 100)
-        await driveBase.gyroForwards(125, 500, 1000, accelerationMethod = SpeedMethods.easeInQuad)
+        await driveBase.gyroForwards(125, 500, 1000, easingMethod = SpeedMethods.easeInQuad)
 
         await runloop.sleep_ms(1000)
 
