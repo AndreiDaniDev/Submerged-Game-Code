@@ -35,7 +35,7 @@ class SpeedMethods(object):
 # ---> The class for the lower part of the robot that is responsible for moving <---
 class DriveBase(object):
 
-    def __init__(self, leftMotorDB: int, rightMotorDB: int, leftMotorSYS: int, rightMotorSYS: int, oneUnit: int, scale: int, brakeMethod) -> None:
+    def __init__(self, leftMotorDB: int, rightMotorDB: int, leftMotorSYS: int, rightMotorSYS: int, oneUnit: int, scale: int) -> None:
 
         '''
         ---> Parameters Initialization Class <---> DB - driveBase, SYS - systems <---
@@ -55,7 +55,7 @@ class DriveBase(object):
         self.oneUnit: int = abs(oneUnit); self.scaleUnit: int = scale
         self.leftMotorDB = leftMotorDB; self.rightMotorDB = rightMotorDB
         self.leftMotorSYS = leftMotorSYS; self.rightMotorSYS = rightMotorSYS
-        self.pair: int = motor_pair.PAIR_1; self.brake = brakeMethod
+        self.pair: int = motor_pair.PAIR_1
         self.pairMaxSpeed: int = 1100; self.pairMinSpeed: int = 100
         self.usualMaxSpeed: int = 1000; self.usualMinSpeed: int = 200
         self.maxAngle = 3350; self.maxOneTurnAngle = 1650
@@ -171,7 +171,7 @@ class DriveBase(object):
 
         return None
 
-    async def gyroForwards(self, distance: int, lowestSpeed: int, highestSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, stop: bool = True) -> None:
+    async def gyroForwards(self, distance: int, lowestSpeed: int, highestSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, stop: bool = True, brakeMethod = motor.SMART_BRAKE) -> None:
 
         '''
         ---> Parameters Gyro Forwards / Backwards <---
@@ -249,12 +249,12 @@ class DriveBase(object):
             await runloop.sleep_ms(dt); self.iterator += 1
 
         if(stop or self.wasStuck):
-            motor_pair.stop(self.pair, stop = self.brake)
+            motor_pair.stop(self.pair, stop = brakeMethod)
         self.previousFunction = 1
 
         return None
 
-    async def gyroBackwards(self, distance: int, lowestSpeed: int, highestSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, stop: bool = True) -> None:
+    async def gyroBackwards(self, distance: int, lowestSpeed: int, highestSpeed: int, *, kp: int = 50, ki: int = 20, kd: int = 75, dt: int = 1, constantsScale: int = 100, integralLimit: int = 250, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, stop: bool = True, brakeMethod = motor.SMART_BRAKE) -> None:
 
         '''
         ---> Parameters Gyro Forwards & Backwards <---
@@ -330,12 +330,12 @@ class DriveBase(object):
             await runloop.sleep_ms(dt); self.iterator += 1
 
         if(stop or self.wasStuck):
-            motor_pair.stop(self.pair, stop = self.brake)
+            motor_pair.stop(self.pair, stop = brakeMethod)
         self.previousFunction = 2
 
         return None
 
-    async def turnLeft(self, angle: int, lowestSpeed: int, highestSpeed: int, *, kLeft: int = -1, kRight: int = 1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True):
+    async def turnLeft(self, angle: int, lowestSpeed: int, highestSpeed: int, *, kLeft: int = -1, kRight: int = 1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True, brakeMethod = motor.SMART_BRAKE):
 
         '''
         ---> Parameters Turn Left & Right <---
@@ -430,12 +430,12 @@ class DriveBase(object):
             await runloop.sleep_ms(1); self.iterator += 1
 
         if(stop or self.wasStuck):
-            motor_pair.stop(self.pair, stop = self.brake)
+            motor_pair.stop(self.pair, stop = brakeMethod)
         self.previousFunction = 3
 
         return None
 
-    async def turnRight(self, angle: int, lowestSpeed: int, highestSpeed: int, *, kLeft: int = 1, kRight: int = -1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True):
+    async def turnRight(self, angle: int, lowestSpeed: int, highestSpeed: int, *, kLeft: int = 1, kRight: int = -1, error: int = 50, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True, brakeMethod = motor.SMART_BRAKE):
 
         '''
         ---> Parameters Turn Left & Right <---
@@ -530,12 +530,12 @@ class DriveBase(object):
             await runloop.sleep_ms(1); self.iterator += 1
 
         if(stop or self.wasStuck):
-            motor_pair.stop(self.pair, stop = self.brake)
+            motor_pair.stop(self.pair, stop = brakeMethod)
         self.previousFunction = 4
 
         return None
 
-    async def arcTurnForwards(self, radius: int, outerWheel: int, angle: int, lowestSpeed: int, highestSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5,accelerationScale: int = 100,easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True) -> None:
+    async def arcTurnForwards(self, radius: int, outerWheel: int, angle: int, lowestSpeed: int, highestSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5,accelerationScale: int = 100,easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True, brakeMethod = motor.SMART_BRAKE) -> None:
 
         '''
         ---> Parameters for Arc Turn Forwards / Backwards <---
@@ -649,12 +649,12 @@ class DriveBase(object):
                 await runloop.sleep_ms(1); self.iterator += 1
 
         if(stop or self.wasStuck):
-            motor_pair.stop(self.pair, stop = self.brake)
+            motor_pair.stop(self.pair, stop = brakeMethod)
         self.previousFunction = 5
 
         return None
 
-    async def arcTurnBackwards(self, radius: int, outerWheel: int, angle: int, lowestSpeed: int, highestSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True) -> None:
+    async def arcTurnBackwards(self, radius: int, outerWheel: int, angle: int, lowestSpeed: int, highestSpeed: int, *, error: int = 17, stallDetectionIterator: int = 2000, stallDetectionThreshold: int = 5, accelerationScale: int = 100, easingMethod = SpeedMethods.easeOutInQuad, addition: int = 0, divizor: int = 1, stop: bool = True, brakeMethod = motor.SMART_BRAKE) -> None:
 
         '''
         ---> Parameters for Arc Turn Forwards / Backwards <---
@@ -771,12 +771,12 @@ class DriveBase(object):
                 await runloop.sleep_ms(1); self.iterator += 1
 
         if(stop or self.wasStuck):
-            motor_pair.stop(self.pair, stop = self.brake)
+            motor_pair.stop(self.pair, stop = brakeMethod)
         self.previousFunction = 6
 
         return None
 
-driveBase = DriveBase(hub.port.A, hub.port.C, hub.port.D, hub.port.B, 2045, 1000, motor.SMART_BRAKE)
+driveBase = DriveBase(hub.port.A, hub.port.C, hub.port.D, hub.port.B, 2045, 1000)
 
 # ---> Approach 1 to implementing runs (Optimal) <---
 class Programs(object):
@@ -891,52 +891,56 @@ class Programs(object):
 
     async def Run7(self) -> None:
         driveBase.initRun()
-
+        
         # Get Octoput & Crab (Inverse Direction - Start with back)
-        motor.run_for_degrees(driveBase.rightMotorSYS, -175, 250)
-        await driveBase.gyroBackwards(75, 200, 400, kp = 150, ki = 2, kd = 0, constantsScale = 1000)
+        await driveBase.gyroBackwards(75, 200, 300, kp = 150, ki = 2, kd = 5, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.turnLeft(325, 200, 400, kLeft = -1, kRight = 1, error = 100)
+        await driveBase.turnLeft(350, 200, 400, kLeft = -1, kRight = 1, error = 100)
         await runloop.sleep_ms(500)
-        await driveBase.gyroBackwards(830, 200, 700, kp = 150, ki = 3, kd = 0, constantsScale = 1000, stallDetectionThreshold = 5, stallDetectionIterator = 500)
+        await driveBase.gyroBackwards(825, 200, 700, kp = 150, ki = 3, kd = 0, constantsScale = 1000, stallDetectionThreshold = 5, stallDetectionIterator = 500)
         await runloop.sleep_ms(500)
 
         # After octopus
-        await driveBase.gyroForwards(190, 200, 400, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
+        await driveBase.gyroForwards(50, 200, 200, kp = 0, ki = 0, kd = 0, constantsScale = 1000)
+        await driveBase.gyroForwards(210, 200, 400, kp = 125, ki = 1, kd = 0, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.turnLeft(950, 200, 300, kLeft = -1, kRight = 1, error = 75) 
+        await driveBase.turnLeft(995, 200, 300, kLeft = -1, kRight = 1, error = 100)
         await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(475, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
+        await driveBase.gyroForwards(450, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000) # Go to the boat
         await runloop.sleep_ms(250)
 
-        await motor.run_for_degrees(driveBase.rightMotorSYS, -1350, 1550)
+        # Boat
+        await motor.run_for_degrees(driveBase.rightMotorSYS, -1325, 1000)
         await runloop.sleep_ms(500)
-        await driveBase.turnRight(380, 250, 250, kLeft = 1, kRight = -1, error = 75) 
+        await driveBase.turnRight(500, 250, 250, kLeft = 1, kRight = -1, error = 75)
         await runloop.sleep_ms(500)
-        await driveBase.turnLeft(100, 250, 250, kLeft = -1, kRight = 1, error = 75)
+        await driveBase.turnLeft(250, 250, 250, kLeft = -1, kRight = 1, error = 75)
         await runloop.sleep_ms(500)
+        
         # Hope - After boat
-        #await driveBase.turnLeft(350, 200, 200, kLeft = -1, kRight = 1)
-        #await runloop.sleep_ms(250)
-        await driveBase.gyroBackwards(130, 200, 300, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
+        await driveBase.gyroBackwards(250, 200, 300, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.turnLeft(800, 200, 300, kLeft = -1, kRight = 1)
+        await driveBase.turnLeft(650, 200, 300, kLeft = -1, kRight = 1, error = 100)
         await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(350, 250, 500, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
+        await driveBase.gyroForwards(250, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
+        await runloop.sleep_ms(500)
+        await driveBase.turnRight(700, 250, 250, kLeft = 1, kRight = 0, error = 75)
         await runloop.sleep_ms(500)
 
-
-        # Hope - After Collecting
-        await driveBase.turnRight(870, 250, 250, kLeft = 1, kRight = -1, error = 75)
+        # Hope - Go & return to base
+        await driveBase.gyroForwards(220, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(300, 450, 500, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroBackwards(100, 200, 300, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.turnRight(900, 250, 250, kLeft = 1, kRight = -1, error = 75)
-        await driveBase.gyroForwards(2000, 650, 1000, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
-
+        await driveBase.gyroBackwards(110, 200, 300, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
+        
+        await driveBase.turnRight(1000, 175, 175, kLeft = 0, kRight = -1, error = 75)
+        await driveBase.gyroForwards(2000, 300, 1000, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
+        
         return None
+
+    async def Run8(self) -> None:
+        driveBase.initRun()
+
+        await driveBase.gyroForwards(2000, 650, 1000, kp = 175, ki = 3, kd = 0, constantsScale = 1000)
 
 # ---> The main program <---
 async def main() -> None:
