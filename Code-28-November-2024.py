@@ -35,7 +35,7 @@ class SpeedMethods(object):
 # ---> The class for the lower part of the robot that is responsible for moving <---
 class DriveBase(object):
 
-    def _init_(self, leftMotorDB: int, rightMotorDB: int, leftMotorSYS: int, rightMotorSYS: int, oneUnit: int, scale: int) -> None:
+    def __init__(self, leftMotorDB: int, rightMotorDB: int, leftMotorSYS: int, rightMotorSYS: int, oneUnit: int, scale: int) -> None:
 
         '''
         ---> Parameters Initialization Class <---> DB - driveBase, SYS - systems <---
