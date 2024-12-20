@@ -1,4 +1,4 @@
-import runloop, hub, motor, motor_pair, math, os
+import runloop, hub, motor, motor_pair, math, os, color
 from hub import motion_sensor as gs
 
 # ---> The class that has all acceleration methods (can be modified) <---
@@ -1021,6 +1021,9 @@ class ProgramManager(Programs):
         self.programIDX: int = 1
         self.idxMax: int = 8
         self.delay: int = 200
+
+        self.playColor = color.ORANGE
+        self.runningColor = color.RED
         return None
 
     def readValueFromFile(self) -> int:
@@ -1037,7 +1040,9 @@ class ProgramManager(Programs):
 
     def writeInt(self, x: int) -> None:
         hub.light_matrix.write(str(x))
-        return None
+
+    def setColor(self, colorVal) -> None:
+        hub.light.color(0, colorVal)
 
     def getUserResponseLF(self) -> int:
         return hub.button.pressed(hub.button.LEFT)
@@ -1066,6 +1071,7 @@ class ProgramManager(Programs):
     async def switchPrograms(self) -> None:
         self.programIDX = self.readValueFromFile()
         self.writeInt(self.programIDX)
+        self.setColor(self.playColor)
         while(1): # Select Programs
             if(self.getUserResponseRG()):
                 self.switchToNextProgram()
@@ -1073,8 +1079,10 @@ class ProgramManager(Programs):
             if(self.getUserResponseLF()):
                 self.running = True; driveBase.initRun()
                 self.writeValueToFile(self.programIDX)
+                self.setColor(self.runningColor)
                 await runloop.sleep_ms(self.delay)
                 await self.PlayProgram(self.programIDX)
+                self.setColor(self.playColor)
                 self.switchToNextProgram()
                 await runloop.sleep_ms(self.delay)
         return None
