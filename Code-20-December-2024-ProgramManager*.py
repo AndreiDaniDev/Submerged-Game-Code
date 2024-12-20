@@ -1012,7 +1012,7 @@ class Programs(object):
 
 # ---> The class with the functions switch and play runs <---
 # ---> Run the following commands in main if you got the error "OSError: [Errno 2] ENOENT"<---
-# programManager.writeValueToFile(1); print(programManager.readValueFromFile())
+# programManager.writeValueToFile(1); print(programManager.readValueFromFile()) or programManager.initFile()
 
 class ProgramManager(Programs):
     def __init__(self) -> None:
@@ -1031,6 +1031,9 @@ class ProgramManager(Programs):
     def writeValueToFile(self, value: int) -> None:
         with open(self.fileName, 'w') as dataFile:
             dataFile.write(str(value))
+
+    def initFile(self) -> None:
+        self.writeValueToFile(1)
 
     def writeInt(self, x: int) -> None:
         hub.light_matrix.write(str(x))
@@ -1059,7 +1062,6 @@ class ProgramManager(Programs):
         if(self.programIDX == self.idxMax + 1):
             self.programIDX = 1
         self.writeInt(self.programIDX)
-        self.writeValueToFile(self.programIDX)
 
     async def switchPrograms(self) -> None:
         self.programIDX = self.readValueFromFile()
@@ -1070,6 +1072,7 @@ class ProgramManager(Programs):
                 await runloop.sleep_ms(self.delay)
             if(self.getUserResponseLF()):
                 self.running = True; driveBase.initRun()
+                self.writeValueToFile(self.programIDX)
                 await runloop.sleep_ms(self.delay)
                 await self.PlayProgram(self.programIDX)
                 self.switchToNextProgram()
@@ -1079,6 +1082,8 @@ class ProgramManager(Programs):
 # ---> The main program <---
 async def main() -> None:
     programManager = ProgramManager()
+    # Run this command before any official match
+    # programManager.initFile()
     await programManager.switchPrograms()
     return None
 
