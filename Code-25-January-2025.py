@@ -798,28 +798,35 @@ class Programs(object):
     async def Run1(self) -> None:
         driveBase.initRun()
         # ---> Code<---
-        
-        await driveBase.turnLeft(15, 200, 200, kLeft = 0, kRight = 1, error = 0)
-        await driveBase.gyroForwards(312, 350, 500, kp = 325, ki = 20, kd = 250, constantsScale = 1000)
-        await motor.run_for_degrees(driveBase.rightMotorSYS, 1000, 1000) # Collect shark
-        await runloop.sleep_ms(1000) # Wait a little bit
 
-        await motor.run_for_degrees(driveBase.rightMotorSYS, -1500, 1000)
+        await driveBase.turnLeft(17, 500, 500, kLeft = 0, kRight = 1, error = 0)
+        await driveBase.gyroForwards(250, 750, 1000, kp = 325, ki = 20, kd = 125, constantsScale = 1000)
 
-        await driveBase.gyroForwards(60, 200, 200, kp = 325, ki = 20, kd = 250, constantsScale = 1000)
-        await runloop.sleep_ms(700)
+        await runloop.sleep_ms(1000)
 
-        await motor.run_for_degrees(driveBase.leftMotorSYS, -730, 1000) # Attach corals
+        await motor.run_for_degrees(driveBase.rightMotorSYS, -1250, 1000) # Move Arm
+
         await runloop.sleep_ms(500)
-        await motor.run_for_degrees(driveBase.leftMotorSYS, 765, 1000) # Retrive Arm
 
-        await driveBase.gyroForwards(25, 350, 500, kp = 325, ki = 20, kd = 250, constantsScale = 1000)
+        await driveBase.gyroForwards(82, 200, 200, kp = 325, ki = 20, kd = 250, constantsScale = 1000)
+        await runloop.sleep_ms(250)
 
-        await motor.run_for_degrees(driveBase.rightMotorSYS, 1600, 1000) # Attach corals
-        await motor.run_for_degrees(driveBase.rightMotorSYS, -1700, 1000)
+        runloop.run(
+            motor.run_for_degrees(driveBase.leftMotorSYS, -1250 , 1000), # Attach corals
+            motor.run_for_degrees(driveBase.rightMotorSYS, 1000, 1000) # Get Little Guy
+        )
 
-        await driveBase.gyroBackwards(400, 200, 1000, kp = 325, ki = 20, kd = 250, constantsScale = 1000, easingMethod = SpeedMethods.easeOutQuad)
+        await runloop.sleep_ms(250)
 
+        runloop.run(
+            motor.run_for_degrees(driveBase.leftMotorSYS, 1000, 1000), # Retrive Arm
+            motor.run_for_degrees(driveBase.rightMotorSYS, -750, 1000) # Retrive Little Guy
+        )
+
+        runloop.run(
+            driveBase.gyroBackwards(400, 1000, 500, kp = 325, ki = 20, kd = 250, constantsScale = 1000, easingMethod = SpeedMethods.easeOutQuad), # Return
+            motor.run_for_degrees(driveBase.rightMotorSYS, 1000, 500)
+        )
 
         return None
 
@@ -843,7 +850,6 @@ class Programs(object):
         await driveBase.gyroBackwards(1000, 1100, 1100, kp = 175, ki = 14, kd = 25, constantsScale = 1000)
 
         return None
-
 
     async def Run3(self) -> None:
         driveBase.initRun()
@@ -932,11 +938,11 @@ class Programs(object):
         await runloop.sleep_ms(250)
         await driveBase.turnRight(500, 250, 250, kLeft = 1, kRight = -1, error = 75)
         await runloop.sleep_ms(250)
-        
+
         await runloop.sleep_ms(250)
         await driveBase.turnLeft(250, 250, 250, kLeft = -1, kRight = 1, error = 75)
         await runloop.sleep_ms(250)
-        
+
         await driveBase.gyroBackwards(125, 300, 500, kp = 100, ki = 1, kd = 0, constantsScale = 1000)
         motor.run_for_degrees(driveBase.rightMotorSYS, 1700, 1000)
         await runloop.sleep_ms(250)
@@ -952,49 +958,6 @@ class Programs(object):
 
         await driveBase.turnRight(700, 175, 175, kLeft = 0, kRight = -1, error = 75)
         await driveBase.gyroForwards(1000, 300, 1000, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
-        
-        '''# Get Octoput & Crab (Inverse Direction - Start with back)
-        await driveBase.gyroBackwards(37, 200, 300, kp = 150, ki = 2, kd = 5, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.turnLeft(350, 200, 400, kLeft = -1, kRight = 1, error = 100)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroBackwards(412, 200, 700, kp = 150, ki = 3, kd = 0, constantsScale = 1000, stallDetectionThreshold = 5, stallDetectionIterator = 500)
-        await runloop.sleep_ms(500)
-
-        # After octopus
-        await driveBase.gyroForwards(25, 200, 200, kp = 0, ki = 0, kd = 0, constantsScale = 1000)
-        await driveBase.gyroForwards(105, 200, 400, kp = 125, ki = 1, kd = 0, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.turnLeft(995, 200, 300, kLeft = -1, kRight = 1, error = 100)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(225, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000) # Go to the boat
-        await runloop.sleep_ms(250)
-
-        # Boat
-        await motor.run_for_degrees(driveBase.rightMotorSYS, -1325, 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.turnRight(500, 250, 250, kLeft = 1, kRight = -1, error = 75)
-        await runloop.sleep_ms(500)
-        await driveBase.turnLeft(250, 250, 250, kLeft = -1, kRight = 1, error = 75)
-        await runloop.sleep_ms(500)
-
-        # Hope - After boat
-        await driveBase.gyroBackwards(125, 200, 300, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.turnLeft(650, 200, 300, kLeft = -1, kRight = 1, error = 100)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(125, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.turnRight(700, 250, 250, kLeft = 1, kRight = 0, error = 75)
-        await runloop.sleep_ms(500)
-
-        # Hope - Go & return to base
-        await driveBase.gyroForwards(110, 250, 500, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroBackwards(55, 200, 300, kp = 175, ki = 1, kd = 0, constantsScale = 1000)
-
-        await driveBase.turnRight(1000, 175, 175, kLeft = 0, kRight = -1, error = 75)
-        await driveBase.gyroForwards(1000, 300, 1000, kp = 175, ki = 1, kd = 0, constantsScale = 1000)'''
 
         return None
 
@@ -1040,27 +1003,6 @@ class Programs(object):
         # ---> Code <---
         driveBase.initRun()
 
-
-
-        '''await driveBase.gyroForwards(325, 500, 1000, kp = 175, ki = 8, kd = 20)
-        await runloop.sleep_ms(500)
-        await driveBase.turnLeft(150, 200, 200, kLeft = 0, kRight = 1, error = 75)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(350, 500, 1000, kp = 175, ki = 8, kd = 20)
-        await runloop.sleep_ms(500)
-
-        await driveBase.gyroBackwards(175, 500, 1000, kp = 175, ki = 8, kd = 20)
-        await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(250, 1000, 1000, kp = 175, ki = 8, kd = 20)
-
-        await driveBase.turnRight(180, 300, 300, kLeft = 1, kRight = -1, error = 75)
-        await driveBase.gyroBackwards(140, 500, 1000, kp = 175, ki = 8, kd = 20)
-
-        await motor.run_for_degrees(driveBase.leftMotorSYS, 1350, 1000) # 75 degrees - One stud
-        await runloop.sleep_ms(500)
-        await motor.run_for_degrees(driveBase.leftMotorSYS, -1350, 1000) # 75 degrees - One stud
-
-        await driveBase.gyroBackwards(450, 500, 1000, kp = 175, ki = 8, kd = 20)'''
         await driveBase.gyroForwards(450, 700, 1000, kp = 175, ki = 1, kd = 25)
         await driveBase.turnLeft(280, 200, 200, kLeft = 0, kRight = 1)
         await driveBase.gyroForwards(240, 700, 1000, kp = 175, ki = 1, kd = 25)
@@ -1077,9 +1019,6 @@ class Programs(object):
         await driveBase.turnRight(280, 200, 200, kLeft = 1, kRight = 0)
         await driveBase.gyroBackwards(600, 1000, 1000, kp = 0, ki = 0, kd = 0)
 
-        
-        
-
     async def Run9(self) -> None:
         driveBase.initRun()
 
@@ -1092,8 +1031,6 @@ class Programs(object):
         await runloop.sleep_ms(500)
         await motor.run_for_degrees(driveBase.rightMotorSYS, 500, 1000)
         await runloop.sleep_ms(500)
-        # await motor.run_for_degrees(driveBase.rightMotorSYS, -200, 1000)
-        # await motor.run_for_degrees(driveBase.rightMotorSYS, 200, 1000)
 
         await driveBase.gyroForwards(180, 750, 1000, kp = 160, ki = 10, kd = 25, constantsScale = 1000, easingMethod = SpeedMethods.easeOutInQuad)
         await runloop.sleep_ms(500)
