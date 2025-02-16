@@ -801,7 +801,7 @@ class Programs(object):
         await driveBase.initRun()
         # ---> Code<---
 
-        await driveBase.gyroForwards(274, 675, 1000, kp = 325, ki = 20, kd = 125, constantsScale = 1000)
+        await driveBase.gyroForwards(285, 675, 1000, kp = 325, ki = 20, kd = 125, constantsScale = 1000)
 
         await runloop.sleep_ms(1000)
 
@@ -809,7 +809,7 @@ class Programs(object):
 
         await runloop.sleep_ms(500)
 
-        await driveBase.gyroForwards(88, 200, 200, kp = 325, ki = 20, kd = 250, constantsScale = 1000)
+        await driveBase.gyroForwards(79, 250, 250, kp = 325, ki = 20, kd = 250, constantsScale = 1000)
 
         await runloop.sleep_ms(250)
 
@@ -835,8 +835,8 @@ class Programs(object):
 
     async def Run2(self) -> None:
         await driveBase.initRun()
-        
-         # ---> Code <--- + ---> Get treasure from boat & Collect Elements <---
+
+        # ---> Code <--- + ---> Get treasure from boat & Collect Elements <---
         await driveBase.turnRight(60, 250, 250, kLeft = 1, kRight = 0)
         motor.run_for_degrees(driveBase.rightMotorSYS, -100, 1000)
         await driveBase.gyroForwards(300, 500, 1000, kp = 175, ki = 14, kd = 25, constantsScale = 1000)
@@ -857,9 +857,9 @@ class Programs(object):
 
     async def Run3(self) -> None:
         await driveBase.initRun()
-       
+
         # ---> Code <--- + ---> Leave Little Guy from run 1 hanging <---
-        await driveBase.turnRight(150, 200, 200, kLeft = 1, kRight = 0, error = 75)
+        await driveBase.turnRight(145, 225, 225, kLeft = 1, kRight = 0, error = 75)
         await runloop.sleep_ms(250)
 
         await driveBase.gyroForwards(555, 500, 1000, kp = 175, ki = 12, kd = 75, constantsScale = 1000)
@@ -867,7 +867,7 @@ class Programs(object):
         await driveBase.turnRight(730, 300, 300, kLeft = 0, kRight = -1, error = 75)
         await runloop.sleep_ms(250)
 
-        await driveBase.gyroForwards(275, 450, 1000, kp = 225, ki = 12, kd = 75, constantsScale = 1000)
+        await driveBase.gyroForwards(275, 625, 1000, kp = 225, ki = 12, kd = 75, constantsScale = 1000)
         await runloop.sleep_ms(1000)
 
         # Return to base
@@ -885,20 +885,21 @@ class Programs(object):
         # ---> Code <--- + ---> The one with the shark & trident <---
 
         # ---> Go to mission <---
-        await driveBase.gyroForwards(605, 750, 1000, kp = 175, ki = 10, kd = 30, constantsScale = 1000)
+        await driveBase.gyroForwards(615, 675, 1000, kp = 275, ki = 20, kd = 75, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.turnLeft(550, 175, 175, kLeft = -1, kRight = 1, error = 75)
+        await driveBase.turnLeft(500, 200, 200, kLeft = -1, kRight = 1, error = 100)
         await runloop.sleep_ms(500)
-        await driveBase.gyroForwards(214, 500, 600, kp = 175, ki = 7, kd = 25, constantsScale = 1000)
+        await driveBase.gyroForwards(214, 375, 500, kp = 225, ki = 15, kd = 75, constantsScale = 1000)
         await runloop.sleep_ms(500)
-        await driveBase.gyroBackwards(14, 200, 200, kp = 175, ki = 7, kd = 25, constantsScale = 1000)
+        await driveBase.gyroBackwards(14, 250, 250, kp = 225, ki = 15, kd = 75, constantsScale = 1000)
         await runloop.sleep_ms(500)
 
         # ---> Collect trident <---
         await motor.run_for_degrees(driveBase.leftMotorSYS, -1600, 1000)
-        await driveBase.gyroForwards(95, 100, 250, kp = 175, ki = 7, kd = 25, constantsScale = 1000)
+        await driveBase.gyroForwards(95, 100, 250, kp = 225, ki = 15, kd = 75, constantsScale = 1000)
 
         motor.run_for_degrees(driveBase.leftMotorSYS, 1400, 1000)
+        await runloop.sleep_ms(200)
         await driveBase.gyroBackwards(100, 200, 200, kp = 175, ki = 7, kd = 25, constantsScale = 1000)
         await runloop.sleep_ms(500)
         await driveBase.turnRight(200, 200, 200, kLeft = 1, kRight = -1, error = 75)
@@ -911,12 +912,16 @@ class Programs(object):
         await driveBase.initRun()
         # ---> Code <--- + ---> New System <---
 
-        await driveBase.gyroBackwards(475, 1000, 1000, kp = 150, ki = 2, kd = 5, constantsScale = 1000)
-        await driveBase.turnLeft(100, 200, 200, kLeft = 1, kRight = -1, error = 200)
+        await driveBase.gyroBackwards(486, 1000, 1000, kp = 150, ki = 2, kd = 5, constantsScale = 1000)
         await runloop.sleep_ms(250)
-        await driveBase.gyroBackwards(818, 250, 699, kp = 925, ki = 125, kd = 375, constantsScale = 1000)
+        motor_pair.move_tank(driveBase.pair, -1000, -600)
+        await runloop.sleep_ms(3000)
+        motor_pair.move_tank(driveBase.pair, -1000, -600)
+        await runloop.sleep_ms(3000)
+        motor_pair.stop(driveBase.pair)
+        # await driveBase.gyroBackwards(775, 750, 750, kp = 275, ki = 10, kd = 0, constantsScale = 1000, integralLimit = 50000)
         await runloop.sleep_ms(250)
-        await driveBase.turnRight(1000, 1000, 1000, kLeft = 1, kRight = -1, error = 200)
+        await driveBase.turnRight(1000, 750, 750, kLeft = 1, kRight = -1, error = 200)
 
         await driveBase.gyroForwards(210, 800, 1000, kp = 175, ki = 10, kd = 30, constantsScale = 1000)
         await runloop.sleep_ms(250)
@@ -925,7 +930,6 @@ class Programs(object):
         await driveBase.gyroForwards(170, 500, 500, kp = 175, ki = 10, kd = 30, constantsScale = 1000)
         await runloop.sleep_ms(250)
         await driveBase.gyroBackwards(475, 1000, 1000, kp = 150, ki = 10, kd = 25, constantsScale = 1000)
-        #await driveBase.gyroBackwards(600, 750, 1000, kp = 800, ki = 50, kd = 150, constantsScale = 1000)
 
         return None
 
